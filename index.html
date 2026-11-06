@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAD90lEQVR4nO3YTZbTSBCFUdMjDiOWwIJ6whJ6x70B9sLAfaC6/nD5OaWIjHvnCOH89KTDpy9fv13gXn+dfQP0JiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIioD/4/ve/Z99CaQJ6z7UeDb1DQEQE9Kanw2OE3iIgIgJ63cvJMUKvEtArtHI7AX2AsF4S0HPvV6KhZwRERED/c8vAGKGnBEREQL/dPi1G6BcB/UcT9xHQnQR3JaDL5d4aNHQRECEBRUNihKYHpIDQ9IBywxMcHdCjzn5yQ6MDIjc3oMfOxtgRmhsQDzE0oBWDMXOEJgY086QXmRjQOgPTHBfQ6jOe1tC4gHisWQEdMw+jRmhQQKPO9TCDAjrSnFinBDTnRA82JaDjDUl2REBnneWEhvYPaMIpnmj/gM61fb6bB7T9+Z1u84Aq2DvinQPa++SK2DmgOjZOeduAqp1Ztft5lD0DWn1aP/75vPT6jewZ0FLXeu5oaMsR2jCgLc+prA0DWurp8Bihy34B7XdCxW0V0PHfzkZoq4CWequV4Q3tE9BOp9LIPgEt9f7MTB6hTQJaeh639DH2vxZ3CKjp09z0tp/ZIaClbp+WmS+y9gFtcAattQ9oqY+OysAR6h3Q6d/Oj/pTffUOaA+tR6hxQAXnJ/+z7XQNqGw9912h7wh1DWg/TRtqGVDx+XnsdYprGdCuOo5Qv4BazM+Kq9XULKBG9dx3zXYj1CwgqukUULv5ue/KvUaoU0BzNGqoTUBN5+eY65+oTUDrHHO6u77IegTU5dccqEFArV9eyd/V4rFpENA6x3+a7PcxVD2gFk/hOvX/+dUDWuesMdjsRVY6oOK/HZfKAW3z7Zz/7ZUfpLoBrVPhS7bCPTxE0YAqP3OnKPuDFA1onTqP/h4vsooBrful6tRzVe1+7lAuoJrPWREFf5xyAa1T83GveVe3qxVQwSesmmo/Ua2A1qn8oFe+tz8qFNCcb+eXPnSHpUaoUEDcrk5DVQKaPD9XXe7zmRIBqeeq44usRED0dX5A5uepdiN0fkC0dnJA5uelXiP06cvXb+feAa15hREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQkZ/JVuwpV4yDjwAAAABJRU5ErkJggg=="><meta name="theme-color" content="#0a1020"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Tempo"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><title>Tempo — личный AI-режиссёр</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);--bg:#0a1020;--card:#111a31;--card2:#17223f;--line:#243256;--tx:#e9edf9;--mut:#8f9bbd;--pri:#5b5cf0;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--hi:#f87171;--lo:#34d399;color-scheme:dark}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#eef1fa;--card:#fff;--card2:#f3f5fc;--line:#d9dfef;--tx:#141a30;--mut:#5d6891;color-scheme:light}}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--tx);font:15px/1.4 "Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;display:flex;justify-content:center}
+#app{width:100%;max-width:480px;height:100%;display:flex;flex-direction:column;position:relative}
+main{flex:1;overflow-y:auto;padding:14px 16px 24px}
+h1{font-size:24px;font-weight:700;margin-bottom:12px}h2{font-size:15px;font-weight:600;margin:16px 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.mut{color:var(--mut);font-size:13px}.row{display:flex;align-items:center;gap:10px}.sp{justify-content:space-between}
+.btn{border:0;border-radius:12px;padding:12px 16px;font:600 15px inherit;font-family:inherit;color:#fff;background:var(--pri);cursor:pointer;width:100%}
+.btn.sec{background:var(--card2);color:var(--tx);border:1px solid var(--line)}.btn.sm{width:auto;padding:8px 14px;font-size:13px}
+.bar{height:8px;background:var(--card2);border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#38bdf8);border-radius:8px;transition:width .4s}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.logo{font-weight:800;letter-spacing:.5px;font-size:18px}
+.fire{background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:13px}
+.ai{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#5b5cf0,#38bdf8);display:grid;place-items:center;font-size:24px;flex:none}
+.t{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}.t:last-child{border:0}
+.chk{width:24px;height:24px;border-radius:50%;border:2px solid var(--mut);flex:none;display:grid;place-items:center;background:none;color:#fff;font-size:14px;cursor:pointer}
+.chk.on{background:var(--ok);border-color:var(--ok)}.chk.p1{border-color:var(--hi)}.chk.p2{border-color:var(--warn)}.chk.p3{border-color:var(--lo)}
+.done{text-decoration:line-through;color:var(--mut)}
+nav{display:flex;border-top:1px solid var(--line);background:var(--card);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{flex:1;background:none;border:0;color:var(--mut);font:11px inherit;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px;cursor:pointer}
+nav button span{font-size:20px}nav button.on{color:#8b8cff}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;border:0;background:none;color:var(--mut);padding:8px;border-radius:9px;font:600 14px inherit;font-family:inherit;cursor:pointer}.seg button.on{background:var(--card2);color:var(--tx)}
+.board{display:grid;grid-template-columns:1fr 1fr;gap:10px}.col{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;min-height:110px}
+.col h3{font-size:13px;margin-bottom:8px;display:flex;justify-content:space-between}.tc{background:var(--card2);border-radius:10px;padding:9px;margin-bottom:8px;font-size:13px;cursor:pointer}.tc small{display:block;color:var(--mut);margin-top:2px}
+.fab{position:absolute;right:18px;bottom:84px;width:54px;height:54px;border-radius:50%;border:0;background:var(--pri);color:#fff;font-size:28px;box-shadow:0 6px 20px #5b5cf080;cursor:pointer}
+.days{display:flex;gap:6px;margin-bottom:12px}.day{flex:1;text-align:center;padding:8px 0;border-radius:12px;background:var(--card);border:1px solid var(--line);cursor:pointer;font-size:12px;color:var(--mut)}.day b{display:block;font-size:16px;color:var(--tx)}.day.on{background:var(--pri);border-color:var(--pri)}.day.on,.day.on b{color:#fff}
+.ev{border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--card2);border-left:4px solid var(--pri)}
+.pill{font-size:11px;border-radius:8px;padding:3px 8px;font-weight:600}.p1{--c:var(--hi)}.p2{--c:var(--warn)}.p3{--c:var(--lo)}.pill{color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
+.sheet{position:absolute;inset:0;background:var(--bg);z-index:20;display:flex;flex-direction:column;padding:16px;overflow-y:auto;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.mic{width:96px;height:96px;border-radius:50%;background:var(--card2);border:0;font-size:40px;margin:20px auto 10px;display:block;cursor:pointer}.mic.rec{background:var(--pri);animation:pl 1.2s infinite}
+@keyframes pl{50%{box-shadow:0 0 0 18px #5b5cf033}}@media (prefers-reduced-motion:reduce){.mic.rec{animation:none}}
+input,select,textarea{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--tx);padding:12px;font:15px inherit;font-family:inherit;margin-bottom:10px}
+label{font-size:12px;color:var(--mut);display:block;margin-bottom:3px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ach{opacity:.4}.ach.on{opacity:1}
+.tl{border-left:2px solid var(--pri);margin-left:8px;padding-left:14px}.tl div{margin-bottom:12px}
+.set{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.toast{position:absolute;left:16px;right:16px;bottom:90px;background:var(--card2);border:1px solid var(--line);padding:12px;border-radius:12px;z-index:30;text-align:center}
+</style></head><body><div id="app"><main id="m"></main><nav id="nav"></nav><div id="ov"></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const NOW=new Date(),TODAY=iso(NOW),TOM=iso(addD(NOW,1));
+const MON=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const WD=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+const fmt=s=>{const d=new Date(s+'T12:00');return d.getDate()+' '+MON[d.getMonth()]};
+const PR={1:'Высокий',2:'Средний',3:'Низкий'};
+const ST={planned:'Запланировано',progress:'В процессе',done:'Выполнено',postponed:'Отложено'};
+const CATS=['Работа','Здоровье и спорт','Покупки','Учёба','Личное'];
+const ICON={'Работа':'💼','Здоровье и спорт':'🏃','Покупки':'🛒','Учёба':'📚','Личное':'🏠'};
+let S;
+const seed=()=>({name:'Алексей',xp:740,streak:1,last:'',doneTotal:0,aiMode:'Авто',notifOn:true,
+ goals:[['💪','Быть в форме','3 месяца'],['🚀','Развить карьеру','6 месяцев'],['💰','Финансовая свобода','1 год']],
+ tasks:[
+ {id:1,title:'Закончить отчёт',date:TODAY,time:'09:00',dur:90,cat:'Работа',prio:1,status:'planned'},
+ {id:2,title:'Позвонить клиенту',date:TODAY,time:'11:30',dur:15,cat:'Работа',prio:2,status:'planned'},
+ {id:3,title:'Тренировка',date:TODAY,time:'18:30',dur:60,cat:'Здоровье и спорт',prio:2,status:'planned'},
+ {id:4,title:'Купить продукты',date:TODAY,time:'19:45',dur:30,cat:'Покупки',prio:3,status:'planned'},
+ {id:5,title:'Подготовить презентацию',date:TOM,time:'10:00',dur:60,cat:'Работа',prio:2,status:'planned'},
+ {id:6,title:'Изучить курс',date:TODAY,time:'20:30',dur:45,cat:'Учёба',prio:3,status:'progress'},
+ {id:7,title:'Позвонить маме',date:TOM,time:'17:00',dur:15,cat:'Личное',prio:3,status:'postponed'}]});
+try{S=JSON.parse(localStorage.getItem('tempo')||'null')}catch(e){}
+S=S||seed();
+const save=()=>{try{localStorage.setItem('tempo',JSON.stringify(S))}catch(e){}};
+let tab='today',view='board',selDay=TODAY;
+const hm=m=>pad(Math.floor(m/60)%24)+':'+pad(m%60);
+const lvl=()=>Math.floor(S.xp/1000)+1,xpIn=()=>S.xp%1000;
+const byTime=(a,b)=>a.time.localeCompare(b.time);
+const todayTasks=()=>S.tasks.filter(t=>t.date===TODAY&&t.status!=='postponed').sort(byTime);
+function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;$('#app').appendChild(e);setTimeout(()=>e.remove(),2200)}
+function toggle(id){const t=S.tasks.find(x=>x.id==id);if(t.status==='done'){t.status='planned';S.xp=Math.max(0,S.xp-20);S.doneTotal--}
+ else{t.status='done';S.xp+=20;S.doneTotal++;if(S.last!==TODAY){S.last=TODAY;S.streak++;}toast('+20 XP · «'+t.title+'» выполнено')}save();render()}
+const taskRow=t=>`<div class="t"><button class="chk p${t.prio} ${t.status==='done'?'on':''}" onclick="toggle(${t.id})">${t.status==='done'?'✓':''}</button>
+<div style="flex:1" onclick="edit(${t.id})"><div class="${t.status==='done'?'done':''}">${t.time} ${t.title}</div><div class="mut">${t.dur} мин · ${t.cat}</div></div><span class="pill p${t.prio}">${PR[t.prio]}</span></div>`;
+
+function vToday(){const l=todayTasks(),left=l.filter(t=>t.status!=='done'),next=left[0];
+ return `<div class="top"><span class="logo">▲ TEMPO</span><span class="fire">🔥 ${S.streak} дн.</span></div>
+ <div class="card"><div class="row sp mut"><b style="color:var(--tx)">Уровень ${lvl()}</b><span>${xpIn()} / 1000 XP</span></div><div class="bar" style="margin-top:8px"><i style="width:${xpIn()/10}%"></i></div></div>
+ <p class="mut" style="margin:4px 0 8px">Сегодня, ${fmt(TODAY)}</p>
+ <div class="card"><b>План на сегодня</b>
+ <div class="row" style="margin:12px 0"><div class="ai">🤖</div><div>${next?`У тебя осталось ${left.length} ${left.length==1?'задача':'задачи'}. Начни с «${next.title}» — ${next.prio==1?'у неё ближайший срок.':'это следующий шаг.'}`:'Все задачи на сегодня выполнены. Отличная работа! 🎉'}</div></div>
+ ${next?`<button class="btn" onclick="edit(${next.id})">Начать</button>`:''}
+ <div style="margin-top:8px">${l.map(taskRow).join('')||'<p class="mut">Задач на сегодня нет — добавь первую.</p>'}</div>
+ <button class="btn sec" onclick="addTask()">+ Новая задача</button></div>
+ <button class="btn sec" onclick="aiPlan()">✨ Составить план дня с ИИ</button>`}
+
+function vTasks(){const seg=`<div class="seg"><button class="${view==='board'?'on':''}" onclick="view='board';render()">Доска</button><button class="${view==='list'?'on':''}" onclick="view='list';render()">Список</button></div>`;
+ let b;if(view==='board')b='<div class="board">'+['planned','progress','done','postponed'].map(s=>{const l=S.tasks.filter(t=>t.status===s);
+  return `<div class="col"><h3><span>${ST[s]}</span><span class="mut">${l.length}</span></h3>${l.map(t=>`<div class="tc" onclick="edit(${t.id})">${t.title}<small>${t.date===TODAY?'Сегодня':t.date===TOM?'Завтра':fmt(t.date)} · ${t.dur} мин</small></div>`).join('')}</div>`}).join('')+'</div>';
+ else b='<div class="card">'+[...S.tasks].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(t=>taskRow(t)).join('')+'</div>';
+ return `<div class="row sp"><h1>Задачи</h1></div>${seg}${b}<button class="fab" onclick="addTask()" aria-label="Новая задача">+</button>`}
+
+function vCal(){const mon=addD(NOW,-((NOW.getDay()+6)%7)),days=[...Array(7)].map((_,i)=>addD(mon,i));
+ const l=S.tasks.filter(t=>t.date===selDay).sort(byTime);
+ return `<h1>Календарь</h1><p class="mut" style="margin-bottom:8px">${fmt(iso(days[0]))} – ${fmt(iso(days[6]))}</p>
+ <div class="days">${days.map(d=>`<div class="day ${iso(d)===selDay?'on':''}" onclick="selDay='${iso(d)}';render()">${WD[d.getDay()]}<b>${d.getDate()}</b>${S.tasks.some(t=>t.date===iso(d))?'•':'&nbsp;'}</div>`).join('')}</div>
+ ${l.map(t=>`<div class="ev" style="border-color:${t.status==='done'?'var(--ok)':['','var(--hi)','var(--warn)','var(--lo)'][t.prio]}" onclick="edit(${t.id})"><div class="mut">${t.time} · ${t.dur} мин</div><b class="${t.status==='done'?'done':''}">${ICON[t.cat]} ${t.title}</b></div>`).join('')||'<p class="mut">На этот день ничего не запланировано.</p>'}
+ <button class="btn sec" onclick="addTask('${selDay}')">+ Добавить на этот день</button>`}
+
+function achs(){const maxDay=S.tasks.filter(t=>t.status==='done'&&t.date===TODAY).length;
+ return [['🔥','Сила в регулярности','5 дней подряд',S.streak>=5],['🏅','Первая задача','Выполни одну задачу',S.doneTotal>=1],['🏆','Первые 10','Сделай 10 задач',S.doneTotal>=10],['🎯','Фокус','5 задач за день',maxDay>=5],['⚡','Уровень 2','Набери 1000 XP',S.xp>=1000]]}
+function vAch(){const a=achs();return `<h1>Достижения</h1>
+ <div class="card row"><div class="ai">🤖</div><div style="flex:1"><b>Уровень ${lvl()}</b><div class="mut">${xpIn()} / 1000 XP</div><div class="bar" style="margin-top:6px"><i style="width:${xpIn()/10}%"></i></div></div></div>
+ <div class="g2"><div class="card">🔥 <b style="font-size:22px">${S.streak}</b><div class="mut">Дней подряд</div></div><div class="card">🏆 <b style="font-size:22px">${a.filter(x=>x[3]).length}</b><div class="mut">Достижений</div></div></div>
+ <h2>Все достижения</h2>${a.map(x=>`<div class="card row ach ${x[3]?'on':''}"><div class="ai" style="border-radius:12px;background:var(--card2)">${x[0]}</div><div><b>${x[1]}</b><div class="mut">${x[2]}</div></div></div>`).join('')}`}
+
+function vProf(){return `<h1>Профиль</h1><div class="card row"><div class="ai">😀</div><div style="flex:1"><input id="nm" value="${S.name}" onchange="S.name=this.value;save()" style="margin:0;font-weight:700"><div class="mut">Двигайся вперёд 💪</div></div></div>
+ <h2>Мои цели</h2><div class="card">${S.goals.map(g=>`<div class="t">${g[0]}<div><b>${g[1]}</b><div class="mut">${g[2]}</div></div></div>`).join('')}</div>
+ <div class="card"><div class="set" onclick="notifs()"><span>🔔 Уведомления</span><span class="mut">›</span></div>
+ <div class="set" onclick="S.aiMode=({'Авто':'Вкл','Вкл':'Выкл','Выкл':'Авто'})[S.aiMode];save();render()"><span>🤖 Режим ИИ</span><span class="mut">${S.aiMode}</span></div>
+ <div class="set" onclick="toast('Все данные хранятся только на этом устройстве')"><span>🔒 Конфиденциальность</span><span class="mut">›</span></div>
+ <div class="set" style="border:0" onclick="if(confirm('Сбросить все данные?')){S=seed();save();render()}"><span>♻️ Сбросить данные</span><span class="mut">Free</span></div></div>`}
+
+const TABS=[['today','🏠','Сегодня',vToday],['tasks','☑️','Задачи',vTasks],['cal','📅','Календарь',vCal],['ach','🏆','Достижения',vAch],['prof','👤','Профиль',vProf]];
+function render(){$('#m').innerHTML=TABS.find(t=>t[0]===tab)[3]();
+ $('#nav').innerHTML=TABS.map(t=>`<button class="${t[0]===tab?'on':''}" onclick="tab='${t[0]}';render()"><span>${t[1]}</span>${t[2]}</button>`).join('')}
+const sheet=h=>{$('#ov').innerHTML=`<div class="sheet">${h}</div>`},close=()=>{$('#ov').innerHTML='';render()};
+
+/* Добавление задачи */
+let rec=null,draft=null;
+function addTask(d){draft={date:d||TODAY};sheet(`<div class="row sp"><button class="btn sec sm" onclick="close()">←</button><b>Новая задача</b><span></span></div>
+<button class="mic" id="mic" onclick="voice()" aria-label="Голос">🎙️</button><p style="text-align:center;font-weight:600" id="st">Нажми и говори</p>
+<p class="mut" style="margin:14px 0 6px">Например: «Завтра в 7 утра сходить в зал и купить продукты после работы»</p>
+<textarea id="tx" rows="3" placeholder="Или напиши текстом…"></textarea>
+<button class="btn" onclick="parse($('#tx').value)">Распознать с ИИ</button><button class="btn sec" style="margin-top:8px" onclick="close()">Отмена</button>`)}
+function voice(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!R){$('#st').textContent='Голос не поддерживается — введи текст ниже';return}
+ try{rec=new R();rec.lang='ru-RU';rec.onresult=e=>{const t=e.results[0][0].transcript;$('#tx').value=t;parse(t)};
+ rec.onerror=()=>{$('#st').textContent='Не удалось записать. Попробуй текстом.';$('#mic').classList.remove('rec')};
+ rec.onend=()=>$('#mic')&&$('#mic').classList.remove('rec');rec.start();$('#mic').classList.add('rec');$('#st').textContent='Говорите…'}catch(e){$('#st').textContent='Голос недоступен — введи текст'}}
+function parse(s){s=(s||'').trim();if(!s){toast('Введите или продиктуйте задачу');return}
+ const l=s.toLowerCase();let date=draft.date,time='12:00',dur=60,cat='Личное',prio=2;
+ if(/завтра/.test(l))date=TOM;else if(/сегодня/.test(l))date=TODAY;else if(/послезавтра/.test(l))date=iso(addD(NOW,2));
+ const m=l.match(/в\s*(\d{1,2})(?:[:.](\d{2}))?\s*(утра|вечера|дня)?/);
+ if(m){let h=+m[1];if(m[3]==='вечера'&&h<12)h+=12;time=pad(h)+':'+(m[2]||'00')}
+ else if(/после работы|вечером/.test(l))time='18:30';else if(/утром/.test(l))time='09:00';
+ if(/час\b|1 час/.test(l))dur=60;const dm=l.match(/(\d+)\s*мин/);if(dm)dur=+dm[1];
+ if(/зал|тренир|бег|спорт|йог/.test(l))cat='Здоровье и спорт';else if(/продукт|магазин|купить/.test(l))cat='Покупки';
+ else if(/отчёт|отчет|клиент|встреч|презентац|работ/.test(l))cat='Работа';else if(/курс|учить|изучить|книг/.test(l))cat='Учёба';
+ if(/срочно|важно|дедлайн/.test(l))prio=1;
+ let title=s.replace(/^(завтра|сегодня|послезавтра)\s*/i,'').replace(/в\s*\d{1,2}([:.]\d{2})?\s*(утра|вечера|дня)?\s*/i,'').trim()||s;
+ title=title.charAt(0).toUpperCase()+title.slice(1);if(title.length>50)title=title.slice(0,50);
+ draft={title,date,time,dur,cat,prio};review()}
+function review(){const d=draft;sheet(`<div style="text-align:center;margin-top:8px"><b style="font-size:22px">Готово!</b><p class="mut">ИИ распознал вашу задачу</p></div>
+<div class="card" style="margin-top:14px"><label>Название</label><input value="${d.title.replace(/"/g,'&quot;')}" onchange="draft.title=this.value">
+<div class="g2"><div><label>Дата</label><input type="date" value="${d.date}" onchange="draft.date=this.value"></div><div><label>Время</label><input type="time" value="${d.time}" onchange="draft.time=this.value"></div>
+<div><label>Длительность, мин</label><input type="number" min="5" step="5" value="${d.dur}" onchange="draft.dur=+this.value"></div>
+<div><label>Приоритет</label><select onchange="draft.prio=+this.value">${[1,2,3].map(p=>`<option value="${p}" ${p==d.prio?'selected':''}>${PR[p]}</option>`).join('')}</select></div></div>
+<label>Категория</label><select onchange="draft.cat=this.value">${CATS.map(c=>`<option ${c==d.cat?'selected':''}>${c}</option>`).join('')}</select></div>
+<button class="btn" onclick="commit()">Добавить в план</button>`)}
+function commit(){if(!draft.title)return toast('Введите название');
+ if(draft.id){Object.assign(S.tasks.find(t=>t.id===draft.id),draft)}else S.tasks.push({id:Date.now(),status:'planned',...draft});save();close();toast('Задача добавлена в план')}
+function edit(id){const t=S.tasks.find(x=>x.id==id);sheet(`<div class="row sp"><button class="btn sec sm" onclick="close()">←</button><b>Задача</b><span></span></div>
+<div class="card" style="margin-top:14px"><b style="font-size:18px">${ICON[t.cat]} ${t.title}</b><p class="mut">${fmt(t.date)}, ${t.time} · ${t.dur} мин · ${t.cat}</p><span class="pill p${t.prio}">${PR[t.prio]}</span></div>
+<h2>Статус</h2><div class="g2">${Object.keys(ST).map(s=>`<button class="btn ${t.status===s?'':'sec'}" onclick="setSt(${id},'${s}')">${ST[s]}</button>`).join('')}</div>
+<h2>&nbsp;</h2><button class="btn sec" onclick="draft={...S.tasks.find(x=>x.id==${id})};review()">Изменить</button>
+<button class="btn sec" style="margin-top:8px;color:var(--bad)" onclick="S.tasks=S.tasks.filter(x=>x.id!=${id});save();close()">Удалить</button>`)}
+function setSt(id,s){const t=S.tasks.find(x=>x.id==id);if(s==='done'&&t.status!=='done'){toggle(id)}else{if(t.status==='done'){S.xp=Math.max(0,S.xp-20);S.doneTotal--}t.status=s;save()}close()}
+
+/* ИИ-режиссёр */
+let plan=[];
+function aiPlan(){const l=S.tasks.filter(t=>t.date===TODAY&&t.status!=='done'&&t.status!=='postponed');
+ if(!l.length){toast('Нет задач для планирования');return}
+ const sorted=[...l].sort((a,b)=>a.prio-b.prio||a.time.localeCompare(b.time));
+ let cur=Math.max(NOW.getHours()*60+NOW.getMinutes()+10,9*60);cur=Math.ceil(cur/15)*15;plan=[];
+ const fixed=t=>/Здоровье|Покупки/.test(t.cat);
+ const flex=sorted.filter(t=>!fixed(t)),fx=sorted.filter(fixed).sort(byTime);
+ flex.forEach(t=>{plan.push({t,s:cur});cur+=t.dur+15});
+ fx.forEach(t=>{let s=Math.max(cur,t.time>'18:00'?+t.time.slice(0,2)*60+ +t.time.slice(3):cur);plan.push({t,s});cur=s+t.dur+15});
+ sheet(`<div style="text-align:center"><div class="ai" style="margin:0 auto 8px">🤖</div><b style="font-size:20px">План на сегодня готов!</b><p class="mut">Я учёл твои цели, дедлайны и привычки.</p></div>
+ <div class="card" style="margin-top:12px">${plan.map(p=>`<div class="t"><span class="pill p${p.t.prio}">${PR[p.t.prio]}</span><div><b>${hm(p.s)} – ${hm(p.s+p.t.dur)}</b><div>${p.t.title}</div></div></div>`).join('')}</div>
+ <div class="card"><b>Почему так?</b><ul class="mut" style="padding-left:18px;margin-top:6px"><li>Сначала задачи с высоким приоритетом.</li><li>Спорт и покупки — в вечернее время, как обычно.</li><li>Между задачами 15 минут, чтобы не перегружать день.</li></ul></div>
+ <div class="g2"><button class="btn" onclick="acceptPlan()">Принять план</button><button class="btn sec" onclick="close()">Изменить</button></div>`)}
+function acceptPlan(){plan.forEach(p=>p.t.time=hm(p.s));save();close();toast('План принят — время задач обновлено')}
+
+/* Уведомления */
+function notifs(){const l=[];const n=todayTasks().filter(t=>t.status!=='done')[0];
+ if(n)l.push(['🔔',`Сегодня ${n.time}`,`Пора начать задачу «${n.title}»`]);
+ l.push(['🔥','Серия',`${S.streak} дн. подряд — так держать!`]);
+ const a=achs().filter(x=>x[3]);if(a.length)l.push(['🏆','Достижение',`Получено: «${a[a.length-1][1]}»`]);
+ S.tasks.filter(t=>t.date===TOM&&t.status==='planned').slice(0,2).forEach(t=>l.push(['⏰',`Завтра ${t.time}`,`Напоминание: ${t.title}`]));
+ l.push(['🤖','Сегодня 08:00','Доступен новый план на день. Проверь, что подготовил ИИ.']);
+ sheet(`<div class="row sp"><button class="btn sec sm" onclick="close()">←</button><b>Уведомления</b><span></span></div><div style="margin-top:14px">${l.map(x=>`<div class="card row"><span style="font-size:24px">${x[0]}</span><div><div class="mut">${x[1]}</div>${x[2]}</div></div>`).join('')}</div>`)}
+render();
+if(location.hash==="#new")addTask();
+if("serviceWorker" in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script></body></html>
