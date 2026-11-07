@@ -43,6 +43,9 @@ label{font-size:12px;color:var(--mut);display:block;margin-bottom:3px}
 .tl{border-left:2px solid var(--pri);margin-left:8px;padding-left:14px}.tl div{margin-bottom:12px}
 .set{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line);cursor:pointer}
 .toast{position:absolute;left:16px;right:16px;bottom:90px;background:var(--card2);border:1px solid var(--line);padding:12px;border-radius:12px;z-index:30;text-align:center}
+.g2>div{min-width:0}input[type=date],input[type=time]{min-width:0;height:46px;-webkit-appearance:none;appearance:none;text-align:left}
+.fl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.fl select{margin:0;padding:9px;font-size:14px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px}.cd{aspect-ratio:1;border-radius:10px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;cursor:pointer}.cd.on{background:var(--pri);border-color:var(--pri);color:#fff}.cd.td{border-color:#8b8cff}.cd.o{opacity:.4}.cd i{width:6px;height:6px;border-radius:50%;margin-top:2px}.l1{background:var(--ok)}.l2{background:var(--warn)}.l3{background:var(--bad)}.hd{font-size:11px;color:var(--mut);text-align:center}
 </style></head><body><div id="app"><main id="m"></main><nav id="nav"></nav><div id="ov"></div></div>
 <script>
 const $=s=>document.querySelector(s);
@@ -64,51 +67,87 @@ try{S=JSON.parse(localStorage.getItem('tempo')||'null')}catch(e){}
 S=S||seed();
 if(S.v!==2){S.tasks=(S.tasks||[]).filter(t=>t.id>1000);S.goals=[];S.xp=0;S.streak=0;S.doneTotal=0;S.last='';if(S.name==='Алексей')S.name='';S.v=2;save0()}
 const save=()=>{try{localStorage.setItem('tempo',JSON.stringify(S))}catch(e){}};
+S.xplog=S.xplog||[];S.habits=S.habits||[];S.ucats=S.ucats||[];S.nt=S.nt||{task:true,deadline:true,habit:true,ach:true,ai:true};
+const applyTheme=()=>{const de=document.documentElement;if(!de)return;if(S.theme==='dark')de.setAttribute('data-theme','dark');else de.removeAttribute('data-theme')};applyTheme();
 let tab='today',view='board',selDay=TODAY;
 const hm=m=>pad(Math.floor(m/60)%24)+':'+pad(m%60);
 const lvl=()=>Math.floor(S.xp/1000)+1,xpIn=()=>S.xp%1000;
 const byTime=(a,b)=>a.time.localeCompare(b.time);
 const todayTasks=()=>S.tasks.filter(t=>t.date===TODAY&&t.status!=='postponed').sort(byTime);
 function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;$('#app').appendChild(e);setTimeout(()=>e.remove(),2200)}
-function toggle(id){const t=S.tasks.find(x=>x.id==id);if(t.status==='done'){t.status='planned';S.xp=Math.max(0,S.xp-20);S.doneTotal--}
- else{t.status='done';S.xp+=20;S.doneTotal++;if(S.last!==TODAY){S.streak=S.last===iso(addD(NOW,-1))?S.streak+1:1;S.last=TODAY}toast('+20 XP · «'+t.title+'» выполнено')}save();render()}
+function addXp(x,t,k){if(!x)return;const L=lvl();if(x<0){const i=S.xplog.findIndex(e=>e.k===k);if(i>=0)S.xplog.splice(i,1)}else S.xplog.unshift({d:TODAY,t,x,k});S.xplog=S.xplog.slice(0,60);S.xp=Math.max(0,S.xp+x);if(lvl()>L)toast('🎉 Новый уровень: '+lvl())}
+function toggle(id){const t=S.tasks.find(x=>x.id==id);
+ if(t.status==='done'){t.status='planned';addXp(-(t.xp||0),t.title,'t'+t.id);S.doneTotal--;t.xp=0;t.doneOn=null}
+ else{t.status='done';t.doneOn=TODAY;S.doneTotal++;const dup=S.tasks.some(x=>x.id!==t.id&&x.status==='done'&&x.doneOn===TODAY&&x.xp>0&&x.title.toLowerCase()===t.title.toLowerCase());t.xp=dup?0:(t.prio==1?30:20);
+  if(t.xp)addXp(t.xp,'Задача: '+t.title,'t'+t.id);if(S.last!==TODAY){S.streak=S.last===iso(addD(NOW,-1))?S.streak+1:1;S.last=TODAY}
+  toast(t.xp?'+'+t.xp+' XP · «'+t.title+'» выполнено':'Та же задача уже была сегодня — XP не начисляется')}
+ save();render()}
 const taskRow=t=>`<div class="t"><button class="chk p${t.prio} ${t.status==='done'?'on':''}" onclick="toggle(${t.id})">${t.status==='done'?'✓':''}</button>
 <div style="flex:1" onclick="edit(${t.id})"><div class="${t.status==='done'?'done':''}">${t.time} ${esc(t.title)}</div><div class="mut">${t.dur} мин · ${t.cat}</div></div><span class="pill p${t.prio}">${PR[t.prio]}</span></div>`;
 
-function vToday(){const l=todayTasks(),left=l.filter(t=>t.status!=='done'),next=left[0];
+function checkLoad(d){const l=S.tasks.filter(t=>t.date===d&&t.status!=='done'&&t.status!=='postponed').sort((a,b)=>b.prio-a.prio||b.time.localeCompare(a.time)),m=l.reduce((a,t)=>a+t.dur,0);if(m<=480)return;
+ const mv=[];let x=m;for(const t of l){if(x<=480)break;mv.push(t);x-=t.dur}
+ if(mv.length&&confirm('На '+fmt(d)+' запланировано '+Math.round(m/60)+' ч — это больше, чем реально успеть. Перенести на следующий день: '+mv.map(t=>t.title).join(', ')+'?')){const nd=iso(addD(new Date(d+'T12:00'),1));mv.forEach(t=>t.date=nd);save();toast('Перенесено задач: '+mv.length)}}
+const over=t=>t.date<TODAY&&t.status!=='done'&&t.status!=='postponed';
+function vToday(){const l=todayTasks(),dn=l.filter(t=>t.status==='done').length,left=l.filter(t=>t.status!=='done'),next=left.find(t=>t.status==='progress')||left[0],tot=left.reduce((a,t)=>a+t.dur,0),od=S.tasks.filter(over).length;
+ const msg=tot>480?`На сегодня запланировано ${Math.round(tot/60)} ч — это много. Нажми «Собрать мой день», и я предложу, что перенести.`:od?`Просрочено задач: ${od}. Загляни во вкладку «Задачи» и перенеси их.`:next?`Начни с «${esc(next.title)}» — ${next.prio==1?'у неё высокий приоритет.':'это следующий шаг.'}`:l.length?'Все задачи на сегодня выполнены. Отличная работа! 🎉':'На сегодня задач пока нет. Добавь первую, а ИИ поможет с планом.';
  return `<div class="top"><span class="logo"><svg width="28" height="20" viewBox="18 26 68 46" aria-hidden="true"><defs><linearGradient id="lg" gradientUnits="userSpaceOnUse" x1="23" x2="85" y1="0" y2="0"><stop offset="0" stop-color="#8B5CF6"/><stop offset=".5" stop-color="#3B82F6"/><stop offset="1" stop-color="#22D3EE"/></linearGradient></defs><g fill="url(#lg)"><polygon points="25,40 34,29 85,29 76,40"/><polygon points="46,45 62,45 40,70 24,70"/><polygon points="66,45 80,45 66,62 52,62"/></g></svg>TEMPO</span><span class="fire">🔥 ${S.streak} дн.</span></div>
  <div class="card"><div class="row sp mut"><b style="color:var(--tx)">Уровень ${lvl()}</b><span>${xpIn()} / 1000 XP</span></div><div class="bar" style="margin-top:8px"><i style="width:${xpIn()/10}%"></i></div></div>
- <p class="mut" style="margin:4px 0 8px">Сегодня, ${fmt(TODAY)}</p>
- <div class="card"><b>План на сегодня</b>
- <div class="row" style="margin:12px 0"><div class="ai">🤖</div><div>${next?`Осталось задач: ${left.length}. Начни с «${esc(next.title)}» — ${next.prio==1?'у неё ближайший срок.':'это следующий шаг.'}`:(l.length?'Все задачи на сегодня выполнены. Отличная работа! 🎉':'На сегодня задач пока нет. Добавь первую, а ИИ поможет с планом.')}</div></div>
- ${next?`<button class="btn" onclick="${next.status==='progress'?'edit':'startTask'}(${next.id})">${next.status==='progress'?'Открыть задачу':'Начать'}</button>`:''}
- <div style="margin-top:8px">${l.map(taskRow).join('')||'<p class="mut">Задач на сегодня нет — добавь первую.</p>'}</div>
+ <p class="mut" style="margin:4px 0 8px">${S.name?'Привет, '+esc(S.name)+'! ':''}Сегодня, ${fmt(TODAY)}</p>
+ <div class="card"><div class="row sp"><b>План на сегодня</b><span class="mut">Выполнено ${dn} из ${l.length}</span></div><div class="bar" style="margin:8px 0 12px"><i style="width:${l.length?dn/l.length*100:0}%"></i></div>
+ ${next?`<div class="card" style="background:var(--card2)"><div class="mut">Сейчас</div><b>${esc(next.title)}</b><div class="mut">${next.time} · ${next.dur} мин · ${next.cat}</div><button class="btn sm" style="margin-top:8px" onclick="${next.status==='progress'?'edit':'startTask'}(${next.id})">${next.status==='progress'?'Открыть задачу':'Начать'}</button></div>`:''}
+ <div>${l.map(taskRow).join('')||'<p class="mut">Задач на сегодня нет.</p>'}</div>
  <button class="btn sec" onclick="addTask()">+ Новая задача</button></div>
- <button class="btn sec" onclick="aiPlan()">✨ Составить план дня с ИИ</button>`}
+ ${habToday()}<div class="card row"><div class="ai">🤖</div><div style="flex:1">${msg}</div></div>
+ <button class="btn" onclick="aiPlan()">✨ Собрать мой день</button><button class="btn sec" style="margin-top:8px" onclick="whatNow()">🤔 Что мне сейчас лучше сделать?</button>`}
 
-function vTasks(){const seg=`<div class="seg"><button class="${view==='board'?'on':''}" onclick="view='board';render()">Доска</button><button class="${view==='list'?'on':''}" onclick="view='list';render()">Список</button></div>`;
- let b;if(view==='board')b='<div class="board">'+['planned','progress','done','postponed'].map(s=>{const l=S.tasks.filter(t=>t.status===s);
-  return `<div class="col"><h3><span>${ST[s]}</span><span class="mut">${l.length}</span></h3>${l.map(t=>`<div class="tc" onclick="edit(${t.id})">${esc(t.title)}<small>${t.date===TODAY?'Сегодня':t.date===TOM?'Завтра':fmt(t.date)} · ${t.dur} мин</small></div>`).join('')}</div>`}).join('')+'</div>';
- else b='<div class="card">'+[...S.tasks].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(t=>taskRow(t)).join('')+'</div>';
- return `<div class="row sp"><h1>Задачи</h1></div>${seg}${b}<button class="fab" onclick="addTask()" aria-label="Новая задача">+</button>`}
+let fil={st:'',pr:'',cat:'',dt:''};
+function filt(){return S.tasks.filter(t=>(!fil.st||(fil.st==='over'?over(t):t.status===fil.st))&&(!fil.pr||t.prio==fil.pr)&&(!fil.cat||t.cat===fil.cat)&&(!fil.dt||(fil.dt==='today'?t.date===TODAY:fil.dt==='tom'?t.date===TOM:(t.date>=TODAY&&t.date<=iso(addD(NOW,7))))))}
+const fsel=(k,o)=>`<select onchange="fil.${k}=this.value;render()">${o.map(([v,l])=>`<option value="${v}" ${fil[k]==v?'selected':''}>${l}</option>`).join('')}</select>`;
+function vTasks0(){const F=filt(),seg=`<div class="seg"><button class="${view==='board'?'on':''}" onclick="view='board';render()">Доска</button><button class="${view==='list'?'on':''}" onclick="view='list';render()">Список</button></div>`;
+ const fl=`<div class="fl">${fsel('st',[['','Все статусы'],['planned','Запланировано'],['progress','В процессе'],['done','Выполнено'],['postponed','Отложено'],['over','Просроченные']])}${fsel('pr',[['','Любой приоритет'],['1','Высокий'],['2','Средний'],['3','Низкий']])}${fsel('cat',[['','Все категории'],...cats().map(c=>[c,c])])}${fsel('dt',[['','Все даты'],['today','Сегодня'],['tom','Завтра'],['week','Ближайшая неделя']])}</div>`;
+ let b;if(view==='board')b='<div class="board">'+['planned','progress','done','postponed'].map(s=>{const l=F.filter(t=>t.status===s);
+  return `<div class="col"><h3><span>${ST[s]}</span><span class="mut">${l.length}</span></h3>${l.map(t=>`<div class="tc" onclick="edit(${t.id})">${esc(t.title)}<small>${t.date===TODAY?'Сегодня':t.date===TOM?'Завтра':fmt(t.date)} · ${t.dur} мин</small>${over(t)?'<small style="color:var(--bad)">Просрочено</small>':''}</div>`).join('')}</div>`}).join('')+'</div>';
+ else b='<div class="card">'+([...F].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(t=>taskRow(t)).join('')||'<p class="mut">Задач нет.</p>')+'</div>';
+ return `<h1>Задачи</h1>${seg}${fl}${b}<button class="fab" onclick="addTask()" aria-label="Новая задача">+</button>`}
 
-function vCal(){const mon=addD(NOW,-((NOW.getDay()+6)%7)),days=[...Array(7)].map((_,i)=>addD(mon,i));
- const l=S.tasks.filter(t=>t.date===selDay).sort(byTime);
- return `<h1>Календарь</h1><p class="mut" style="margin-bottom:8px">${fmt(iso(days[0]))} – ${fmt(iso(days[6]))}</p>
- <div class="days">${days.map(d=>`<div class="day ${iso(d)===selDay?'on':''}" onclick="selDay='${iso(d)}';render()">${WD[d.getDay()]}<b>${d.getDate()}</b>${S.tasks.some(t=>t.date===iso(d))?'•':'&nbsp;'}</div>`).join('')}</div>
- ${l.map(t=>`<div class="ev" style="border-color:${t.status==='done'?'var(--ok)':['','var(--hi)','var(--warn)','var(--lo)'][t.prio]}" onclick="edit(${t.id})"><div class="mut">${t.time} · ${t.dur} мин</div><b class="${t.status==='done'?'done':''}">${ICON[t.cat]} ${esc(t.title)}</b></div>`).join('')||'<p class="mut">На этот день ничего не запланировано.</p>'}
+let calMode='week',calA=new Date(NOW);
+const MONN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const dayMin=d=>S.tasks.filter(t=>t.date===d&&t.status!=='postponed').reduce((a,t)=>a+t.dur,0);
+const lc=m=>!m?'':m<240?'l1':m<480?'l2':'l3';
+function calGo(n){if(calMode==='week')calA=addD(calA,7*n);else calA=new Date(calA.getFullYear(),calA.getMonth()+n,1);render()}
+function calMd(m){calMode=m;calA=new Date(selDay+'T12:00');render()}
+function vCal(){let cells,title;
+ if(calMode==='week'){const mon=addD(calA,-((calA.getDay()+6)%7));cells=[...Array(7)].map((_,i)=>addD(mon,i));title=fmt(iso(cells[0]))+' – '+fmt(iso(cells[6]))}
+ else{const f=new Date(calA.getFullYear(),calA.getMonth(),1),st=addD(f,-((f.getDay()+6)%7));cells=[...Array(42)].map((_,i)=>addD(st,i));title=MONN[calA.getMonth()]+' '+calA.getFullYear()}
+ const l=S.tasks.filter(t=>t.date===selDay).sort(byTime),m=dayMin(selDay);
+ return `<h1>Календарь</h1><div class="seg"><button class="${calMode==='week'?'on':''}" onclick="calMd('week')">Неделя</button><button class="${calMode==='month'?'on':''}" onclick="calMd('month')">Месяц</button></div>
+ <div class="row sp" style="margin-bottom:10px"><button class="btn sec sm" onclick="calGo(-1)" aria-label="Назад">‹</button><b>${title}</b><button class="btn sec sm" onclick="calGo(1)" aria-label="Вперёд">›</button></div>
+ <div class="cal">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(x=>`<div class="hd">${x}</div>`).join('')}${cells.map(d=>{const k=iso(d);return `<div class="cd ${k===selDay?'on':''} ${k===TODAY?'td':''} ${calMode==='month'&&d.getMonth()!==calA.getMonth()?'o':''}" onclick="selDay='${k}';render()">${d.getDate()}<i class="${lc(dayMin(k))}"></i></div>`}).join('')}</div>
+ <button class="btn sec sm" style="margin-bottom:10px" onclick="selDay=TODAY;calA=new Date(NOW);render()">Сегодня</button>
+ <p class="mut" style="margin-bottom:8px"><b style="color:var(--tx)">${fmt(selDay)}</b> · ${m?'нагрузка '+Math.floor(m/60)+' ч '+m%60+' мин':'свободный день'}</p>
+ ${l.map(t=>`<div class="ev" style="border-color:${t.status==='done'?'var(--ok)':['','var(--hi)','var(--warn)','var(--lo)'][t.prio]}" onclick="edit(${t.id})"><div class="mut">${t.time} · ${t.dur} мин</div><b class="${t.status==='done'?'done':''}">${ICON[t.cat]||'🏷️'} ${esc(t.title)}</b></div>`).join('')||'<p class="mut">На этот день ничего не запланировано.</p>'}
  <button class="btn sec" onclick="addTask('${selDay}')">+ Добавить на этот день</button>`}
 
-function achs(){const maxDay=S.tasks.filter(t=>t.status==='done'&&t.date===TODAY).length;
- return [['🔥','Сила в регулярности','5 дней подряд',S.streak>=5],['🏅','Первая задача','Выполни одну задачу',S.doneTotal>=1],['🏆','Первые 10','Сделай 10 задач',S.doneTotal>=10],['🎯','Фокус','5 задач за день',maxDay>=5],['⚡','Уровень 2','Набери 1000 XP',S.xp>=1000]]}
-function vAch(){const a=achs();return `<h1>Достижения</h1>
+function achs(){const mx=S.tasks.filter(t=>t.doneOn===TODAY).length,hs=Math.max(0,...S.habits.map(hstreak)),dn=S.tasks.filter(t=>t.status==='done').length;
+ return [['🏅','Первая задача','Выполни одну задачу',dn>=1],['🏆','Первые 10','Выполни 10 задач',dn>=10],['🎯','Фокус','5 задач за один день',mx>=5],['🔥','Сила в регулярности','7 дней активности подряд',S.streak>=7],['🔁','Привычка','7 дней привычки подряд',hs>=7],['⭐','Цель достигнута','Отметь личную цель выполненной',S.goals.some(g=>g[2]==='done')],['⚡','Уровень 2','Набери 1000 XP',S.xp>=1000]]}
+const lastN=n=>[...Array(n)].map((_,i)=>iso(addD(NOW,i-(n-1))));
+const actOn=d=>S.tasks.filter(t=>t.doneOn===d).length+S.habits.filter(h=>h.done.includes(d)).length;
+function vAch(){const a=achs(),ds=lastN(14),act=ds.slice(7).map(actOn),prev=ds.slice(0,7).map(actOn).reduce((x,y)=>x+y,0),cur=act.reduce((x,y)=>x+y,0),mx=Math.max(1,...act),
+ dn=S.tasks.filter(t=>t.status==='done').length,due=S.tasks.filter(t=>t.date<=TODAY&&t.status!=='postponed').length,pct=due?Math.round(S.tasks.filter(t=>t.date<=TODAY&&t.status==='done').length/due*100):0,gd=S.goals.filter(g=>g[2]==='done').length;
+ return `<h1>Достижения</h1>
  <div class="card row"><div class="ai">🤖</div><div style="flex:1"><b>Уровень ${lvl()}</b><div class="mut">${xpIn()} / 1000 XP</div><div class="bar" style="margin-top:6px"><i style="width:${xpIn()/10}%"></i></div></div></div>
- <div class="g2"><div class="card">🔥 <b style="font-size:22px">${S.streak}</b><div class="mut">Дней подряд</div></div><div class="card">🏆 <b style="font-size:22px">${a.filter(x=>x[3]).length}</b><div class="mut">Достижений</div></div></div>
- <h2>Все достижения</h2>${a.map(x=>`<div class="card row ach ${x[3]?'on':''}"><div class="ai" style="border-radius:12px;background:var(--card2)">${x[0]}</div><div><b>${x[1]}</b><div class="mut">${x[2]}</div></div></div>`).join('')}`}
+ <div class="g2"><div class="card">🔥 <b style="font-size:22px">${S.streak}</b><div class="mut">Дней подряд</div></div><div class="card">🏆 <b style="font-size:22px">${a.filter(x=>x[3]).length}</b><div class="mut">Достижений</div></div>
+ <div class="card">✅ <b style="font-size:22px">${dn}</b><div class="mut">Выполнено задач</div></div><div class="card">📈 <b style="font-size:22px">${pct}%</b><div class="mut">Выполнение</div></div></div>
+ <h2>Активность за 7 дней</h2><div class="card"><div class="row" style="align-items:flex-end;height:96px;gap:6px">${act.map((n,i)=>`<div style="flex:1;text-align:center"><div class="mut" style="font-size:11px">${n||''}</div><div style="height:${Math.max(3,n/mx*60)}px;background:var(--pri);border-radius:4px"></div><div class="mut" style="font-size:11px">${WD[new Date(lastN(7)[i]+'T12:00').getDay()]}</div></div>`).join('')}</div>
+ <p class="mut" style="margin-top:8px">${cur>prev?'Динамика растёт: ':cur<prev?'Активность ниже прошлой недели: ':'Как и неделю назад: '}${cur} действий против ${prev} · Достигнуто целей: ${gd}</p></div>
+ <h2>Все достижения</h2>${a.map(x=>`<div class="card row ach ${x[3]?'on':''}"><div class="ai" style="border-radius:12px;background:var(--card2)">${x[0]}</div><div><b>${x[1]}</b><div class="mut">${x[2]}</div></div></div>`).join('')}
+ <h2>История опыта</h2><div class="card">${S.xplog.slice(0,10).map(e=>`<div class="t"><div style="flex:1">${esc(e.t)}<div class="mut">${fmt(e.d)}</div></div><b style="color:var(--ok)">+${e.x}</b></div>`).join('')||'<p class="mut">Пока пусто. Выполни задачу или отметь привычку.</p>'}</div>`}
 
 function vProf(){return `<h1>Профиль</h1><div class="card row"><div class="ai">😀</div><div style="flex:1"><input id="nm" placeholder="Твоё имя" value="${esc(S.name)}" onchange="S.name=this.value;save()" style="margin:0;font-weight:700"><div class="mut">Двигайся вперёд 💪</div></div></div>
- <h2>Мои цели</h2><div class="card">${S.goals.map((g,i)=>`<div class="t"><span>🎯</span><div style="flex:1"><b>${esc(g[1])}</b></div><button class="btn sec sm" onclick="delGoal(${i})" aria-label="Удалить цель">✕</button></div>`).join('')||'<p class="mut">Целей пока нет. Добавь первую: ИИ учтёт её при планировании.</p>'}<div class="row" style="margin-top:10px"><input id="gl" placeholder="Новая цель" style="margin:0"><button class="btn sm" onclick="addGoal()">+</button></div></div>
- <div class="card"><div class="set" onclick="notifs()"><span>🔔 Уведомления</span><span class="mut">›</span></div>
+ <div class="card"><div class="g2"><div>Уровень <b>${lvl()}</b></div><div>Всего XP <b>${S.xp}</b></div><div>Выполнено <b>${S.tasks.filter(t=>t.status==='done').length}</b></div><div>Достижений <b>${achs().filter(x=>x[3]).length}</b></div></div></div><h2>Мои цели</h2><div class="card">${S.goals.map((g,i)=>`<div class="t"><button class="chk ${g[2]==='done'?'on':''}" onclick="goalDone(${i})" aria-label="Цель достигнута">${g[2]==='done'?'✓':''}</button><div style="flex:1" class="${g[2]==='done'?'done':''}"><b>${esc(g[1])}</b></div><button class="btn sec sm" onclick="delGoal(${i})" aria-label="Удалить цель">✕</button></div>`).join('')||'<p class="mut">Целей пока нет. Добавь первую: ИИ учтёт её при планировании.</p>'}<div class="row" style="margin-top:10px"><input id="gl" placeholder="Новая цель" style="margin:0"><button class="btn sm" onclick="addGoal()">+</button></div></div>
+ <h2>Категории задач</h2><div class="card">${(S.ucats||[]).map((c,i)=>`<div class="t"><span style="flex:1">${esc(c)}</span><button class="btn sec sm" onclick="delCat(${i})">✕</button></div>`).join('')}<div class="row" style="margin-top:6px"><input id="cn" placeholder="Новая категория" style="margin:0"><button class="btn sm" onclick="addCat()">+</button></div><p class="mut" style="margin-top:6px">Стандартные: ${CATS.join(', ')}</p></div><div class="card"><div class="set" onclick="notifSet()"><span>🔔 Уведомления</span><span class="mut">›</span></div>
+ <div class="set" onclick="S.theme=S.theme==='dark'?'':'dark';save();applyTheme();render()"><span>🌙 Тема</span><span class="mut">${S.theme==='dark'?'Тёмная':'Авто'}</span></div>
  <div class="set" onclick="S.aiMode=({'Авто':'Вкл','Вкл':'Выкл','Выкл':'Авто'})[S.aiMode];save();render()"><span>🤖 Режим ИИ</span><span class="mut">${S.aiMode}</span></div>
  <div class="set" onclick="toast('Все данные хранятся только на этом устройстве')"><span>🔒 Конфиденциальность</span><span class="mut">›</span></div>
  <div class="set" style="border:0" onclick="if(confirm('Сбросить все данные?')){S=seed();save();render()}"><span>♻️ Сбросить данные</span><span class="mut">Free</span></div></div>`}
@@ -125,45 +164,55 @@ function addTask(d){draft={date:d||TODAY};sheet(`<div class="row sp"><button cla
 <p class="mut" style="margin:14px 0 6px">Например: «Завтра в 7 утра сходить в зал и купить продукты после работы»</p>
 <textarea id="tx" rows="3" placeholder="Или напиши текстом…"></textarea>
 <button class="btn" onclick="parse($('#tx').value)">Распознать с ИИ</button><button class="btn sec" style="margin-top:8px" onclick="closeSheet()">Отмена</button>`)}
-function voice(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!R){$('#st').textContent='Голос не поддерживается — введи текст ниже';return}
- try{rec=new R();rec.lang='ru-RU';rec.onresult=e=>{const t=e.results[0][0].transcript;$('#tx').value=t;parse(t)};
- rec.onerror=()=>{$('#st').textContent='Не удалось записать. Попробуй текстом.';$('#mic').classList.remove('rec')};
- rec.onend=()=>$('#mic')&&$('#mic').classList.remove('rec');rec.start();$('#mic').classList.add('rec');$('#st').textContent='Говорите…'}catch(e){$('#st').textContent='Голос недоступен — введи текст'}}
-function parse(s){s=(s||'').trim();if(!s){toast('Введите или продиктуйте задачу');return}
- const l=s.toLowerCase();let date=draft.date,time='12:00',dur=60,cat='Личное',prio=2;
- if(/послезавтра/.test(l))date=iso(addD(NOW,2));else if(/завтра/.test(l))date=TOM;else if(/сегодня/.test(l))date=TODAY;
- const m=l.match(/(?:^|\s)в\s*(\d{1,2})(?!\d)(?!\s*мин)(?:[:.](\d{2}))?\s*(?:час\S*)?\s*(утра|вечера|дня)?/);
- if(m&&+m[1]<24){let h=+m[1];if((m[3]==='вечера'||m[3]==='дня')&&h<12)h+=12;time=pad(h)+':'+(m[2]||'00')}
- else if(/после работы|вечером/.test(l))time='18:30';else if(/утром/.test(l))time='09:00';
- const l2=m?l.replace(m[0],' '):l;const dh=l2.match(/(\d+(?:[.,]\d+)?)\s*ч(?:ас\S*)?(?=\s|$|[.,])/);const dm=l2.match(/(\d+)\s*мин/);
+const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent||'');
+function voice(){const tx=$('#tx');
+ if(IOS){tx.focus();$('#st').textContent='Нажми 🎙 на клавиатуре телефона и продиктуй';return}
+ const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R){$('#st').textContent='Голос не поддерживается — введи текст ниже';tx.focus();return}
+ if(rec){try{rec.stop()}catch(e){}rec=null;$('#mic').classList.remove('rec');$('#st').textContent='Остановлено';return}
+ try{rec=new R();rec.lang='ru-RU';const to=setTimeout(()=>{try{rec&&rec.stop()}catch(e){}},15000);
+ const end=()=>{clearTimeout(to);rec=null;const m=$('#mic');m&&m.classList.remove('rec')};
+ rec.onresult=e=>{tx.value=e.results[0][0].transcript;$('#st').textContent='Готово. Проверь текст и нажми «Распознать»'};
+ rec.onerror=()=>{end();$('#st').textContent='Не удалось записать. Введи текст.'};rec.onend=end;rec.start();$('#mic').classList.add('rec');$('#st').textContent='Говорите… (нажми ещё раз, чтобы остановить)'}catch(e){rec=null;$('#st').textContent='Голос недоступен — введи текст'}}
+const TM=/(?:^|\s)в\s*(\d{1,2})(?!\d)(?!\s*мин)(?:[:.](\d{2}))?\s*(?:час\S*)?\s*(утра|вечера|дня)?/;
+const dword=l=>/послезавтра/.test(l)?iso(addD(NOW,2)):/завтра/.test(l)?TOM:/сегодня/.test(l)?TODAY:null;
+function one(seg,bd){const l=seg.toLowerCase();let date=dword(l)||bd,time='',dur=0,cat='Личное',prio=2;
+ const m=l.match(TM);if(m&&+m[1]<24){let h=+m[1];if((m[3]==='вечера'||m[3]==='дня')&&h<12)h+=12;time=pad(h)+':'+(m[2]||'00')}else if(/вечером|после работы/.test(l))time='18:30';else if(/утром/.test(l))time='09:00';
+ const l2=m?l.replace(m[0],' '):l,dh=l2.match(/(\d+(?:[.,]\d+)?)\s*ч(?:ас\S*)?(?=\s|$|[.,])/),dm=l2.match(/(\d+)\s*мин/);
  if(/полчаса/.test(l2))dur=30;else if(dm)dur=+dm[1];else if(dh)dur=Math.round(parseFloat(dh[1].replace(',','.'))*60);else if(/(^|\s)час(\s|$|[.,])/.test(l2))dur=60;
- if(/зал|тренир|бег|спорт|йог/.test(l))cat='Здоровье и спорт';else if(/продукт|магазин|купить/.test(l))cat='Покупки';
- else if(/отчёт|отчет|клиент|встреч|презентац|работ/.test(l))cat='Работа';else if(/курс|учить|изучить|книг/.test(l))cat='Учёба';
+ if(/зал|тренир|бег|спорт|йог|зарядк/.test(l))cat='Здоровье и спорт';else if(/продукт|магазин|купить/.test(l))cat='Покупки';else if(/курс|учить|изучить|книг|учебн|экзамен/.test(l))cat='Учёба';else if(/отчёт|отчет|клиент|встреч|презентац|работ|проект/.test(l))cat='Работа';
  if(/срочно|важно|дедлайн/.test(l))prio=1;
- let title=s.replace(/(^|\s)(послезавтра|завтра|сегодня)(?=\s|$|[.,])/gi,' ').replace(/(^|\s)в\s*\d{1,2}(?!\d)(?!\s*мин)([:.]\d{2})?\s*(час\S*)?\s*(утра|вечера|дня)?/i,' ').replace(/\s+/g,' ').trim()||s;
- title=title.charAt(0).toUpperCase()+title.slice(1);if(title.length>50)title=title.slice(0,50);
- draft={title,date,time,dur,cat,prio};review()}
+ if(!dur)dur=/позвонить|звонок/.test(l)?15:/зал|тренир/.test(l)?60:/продукт|магазин|купить/.test(l)?30:60;
+ let title=seg.replace(/(^|\s)(послезавтра|завтра|сегодня|вечером|утром)(?=\s|$|[.,])/gi,' ').replace(/(^|\s)(нужно|надо|необходимо|не забыть|мне|хочу)(?=\s|$)/gi,' ').replace(/(^|\s)в\s*\d{1,2}(?!\d)(?!\s*мин)([:.]\d{2})?\s*(час\S*)?\s*(утра|вечера|дня)?/i,' ').replace(/\s+/g,' ').trim()||seg;
+ title=title.charAt(0).toUpperCase()+title.slice(1);if(title.length>50)title=title.slice(0,50);return {title,date,time,dur,cat,prio}}
+let batch=[];
+function parse(s){s=(s||'').trim();if(!s){toast('Введите или продиктуйте задачу');return}
+ const bd=dword(s.toLowerCase())||draft.date||TODAY;
+ const segs=s.split(/[,;\n]+|\s+и\s+(?=[а-яё]+(?:ть|ться|ти|чь)(?:\s|$))/i).map(x=>x.trim()).filter(Boolean);
+ const ds=segs.map(x=>one(x,bd));let cur=10*60;ds.forEach(d=>{if(!d.time){d.time=pad(Math.floor(cur/60))+':'+pad(cur%60);cur+=d.dur+15}});
+ if(ds.length===1){draft=ds[0];review()}else{batch=ds;reviewBatch()}}
+function reviewBatch(){sheet(`<div style="text-align:center"><b style="font-size:22px">Разобрал задач: ${batch.length}</b><p class="mut">Проверь план и подтверди</p></div><div class="card" style="margin-top:12px">${batch.map((t,i)=>`<div class="t"><div style="flex:1"><b>${esc(t.title)}</b><div class="mut">${fmt(t.date)}, ${t.time} · ${t.dur} мин · ${t.cat}</div></div><button class="btn sec sm" onclick="batch.splice(${i},1);batch.length?reviewBatch():closeSheet()">✕</button></div>`).join('')}</div><button class="btn" onclick="commitBatch()">Добавить все</button><button class="btn sec" style="margin-top:8px" onclick="closeSheet()">Отмена</button>`)}
+function commitBatch(){batch.forEach((t,i)=>S.tasks.push({id:Date.now()+i,status:'planned',...t}));save();[...new Set(batch.map(t=>t.date))].forEach(d=>checkLoad(d));closeSheet();toast('Добавлено задач: '+batch.length)}
 function review(){const d=draft;sheet(`<div style="text-align:center;margin-top:8px"><b style="font-size:22px">${d.id?'Изменить задачу':'Готово!'}</b><p class="mut">${d.id?'Поправь, что нужно, и сохрани':'ИИ распознал вашу задачу'}</p></div>
-<div class="card" style="margin-top:14px"><label>Название</label><input value="${esc(d.title)}" onchange="draft.title=this.value">
+<div class="card" style="margin-top:14px"><label>Название</label><input value="${esc(d.title)}" onchange="draft.title=this.value"><label>Описание</label><textarea rows="2" onchange="draft.desc=this.value">${esc(d.desc||'')}</textarea>
 <div class="g2"><div><label>Дата</label><input type="date" value="${d.date}" onchange="draft.date=this.value"></div><div><label>Время</label><input type="time" value="${d.time}" onchange="draft.time=this.value"></div>
 <div><label>Длительность, мин</label><input type="number" min="5" step="5" value="${d.dur}" onchange="draft.dur=+this.value"></div>
 <div><label>Приоритет</label><select onchange="draft.prio=+this.value">${[1,2,3].map(p=>`<option value="${p}" ${p==d.prio?'selected':''}>${PR[p]}</option>`).join('')}</select></div></div>
-<label>Категория</label><select onchange="draft.cat=this.value">${CATS.map(c=>`<option ${c==d.cat?'selected':''}>${c}</option>`).join('')}</select></div>
+<label>Категория</label><select onchange="draft.cat=this.value">${cats().map(c=>`<option ${c==d.cat?'selected':''}>${c}</option>`).join('')}</select></div>
 <button class="btn" onclick="commit()">${d.id?'Сохранить':'Добавить в план'}</button><button class="btn sec" style="margin-top:8px" onclick="closeSheet()">Отмена</button>`)}
 function commit(){if(!draft.title)return toast('Введите название');
- if(draft.id){Object.assign(S.tasks.find(t=>t.id===draft.id),draft)}else S.tasks.push({id:Date.now(),status:'planned',...draft});save();closeSheet();toast(draft.id?'Изменения сохранены':'Задача добавлена в план')}
+ if(draft.id){Object.assign(S.tasks.find(t=>t.id===draft.id),draft)}else S.tasks.push({id:Date.now(),status:'planned',...draft});save();checkLoad(draft.date);closeSheet();toast(draft.id?'Изменения сохранены':'Задача добавлена в план')}
+function moveTask(id,d){if(!d)return;S.tasks.find(x=>x.id==id).date=d;save();checkLoad(d);closeSheet();toast('Перенесено на '+fmt(d))}
 function startTask(id){const t=S.tasks.find(x=>x.id==id);t.status='progress';save();render();toast('Задача в процессе: '+t.title)}
 function edit(id){const t=S.tasks.find(x=>x.id==id);sheet(`<div class="row sp"><button class="btn sec sm" onclick="closeSheet()">←</button><b>Задача</b><span></span></div>
-<div class="card" style="margin-top:14px"><b style="font-size:18px">${ICON[t.cat]} ${esc(t.title)}</b><p class="mut">${fmt(t.date)}, ${t.time} · ${t.dur} мин · ${t.cat}</p><span class="pill p${t.prio}">${PR[t.prio]}</span></div>
-<h2>Статус</h2><div class="g2">${Object.keys(ST).map(s=>`<button class="btn ${t.status===s?'':'sec'}" onclick="setSt(${id},'${s}')">${ST[s]}</button>`).join('')}</div>
+<div class="card" style="margin-top:14px"><b style="font-size:18px">${ICON[t.cat]||'🏷️'} ${esc(t.title)}</b><p class="mut">${fmt(t.date)}, ${t.time} · ${t.dur} мин · ${t.cat}</p><span class="pill p${t.prio}">${PR[t.prio]}</span></div>
+${t.desc?`<p style="margin-top:8px">${esc(t.desc)}</p>`:''}<h2>Перенести на другую дату</h2><input type="date" value="${t.date}" onchange="moveTask(${t.id},this.value)"><h2>Статус</h2><div class="g2">${Object.keys(ST).map(s=>`<button class="btn ${t.status===s?'':'sec'}" onclick="setSt(${id},'${s}')">${ST[s]}</button>`).join('')}</div>
 <h2>&nbsp;</h2><button class="btn sec" onclick="draft={...S.tasks.find(x=>x.id==${id})};review()">Изменить</button>
-<button class="btn sec" style="margin-top:8px;color:var(--bad)" onclick="S.tasks=S.tasks.filter(x=>x.id!=${id});save();closeSheet();toast('Задача удалена')">Удалить</button>`)}
-function setSt(id,s){const t=S.tasks.find(x=>x.id==id);if(s==='done'&&t.status!=='done'){toggle(id)}else if(t.status!==s){if(t.status==='done'){S.xp=Math.max(0,S.xp-20);S.doneTotal--}t.status=s;save()}closeSheet()}
+<button class="btn sec" style="margin-top:8px;color:var(--bad)" onclick="if(confirm('Удалить задачу?')){S.tasks=S.tasks.filter(x=>x.id!=${id});save();closeSheet();toast('Задача удалена')}">Удалить</button>`)}
+function setSt(id,s){const t=S.tasks.find(x=>x.id==id);if(s==='done'&&t.status!=='done'){toggle(id)}else if(t.status!==s){if(t.status==='done'){addXp(-(t.xp||0),t.title,'t'+t.id);S.doneTotal--;t.xp=0;t.doneOn=null}t.status=s;save()}closeSheet()}
 
 /* ИИ-режиссёр */
 let plan=[],planDate=TODAY;
-function aiPlan(){const l=S.tasks.filter(t=>t.date===TODAY&&t.status!=='done'&&t.status!=='postponed');
+function aiPlan(){checkLoad(TODAY);const l=S.tasks.filter(t=>t.date===TODAY&&t.status!=='done'&&t.status!=='postponed');
  if(!l.length){toast('Нет задач для планирования');return}
  const sorted=[...l].sort((a,b)=>a.prio-b.prio||a.time.localeCompare(b.time));
  let cur=Math.max(NOW.getHours()*60+NOW.getMinutes()+10,9*60);cur=Math.ceil(cur/15)*15;plan=[];planDate=TODAY;if(cur>21*60){planDate=TOM;cur=9*60}
@@ -180,12 +229,36 @@ function acceptPlan(){plan.forEach(p=>{p.t.time=hm(p.s);p.t.date=planDate});save
 /* Уведомления */
 function addGoal(){const v=$('#gl').value.trim();if(!v)return;S.goals.push(['🎯',v,'']);save();render()}
 function delGoal(i){S.goals.splice(i,1);save();render()}
-function notifs(){const l=[];const n=todayTasks().filter(t=>t.status!=='done')[0];
- if(n)l.push(['🔔',`Сегодня ${n.time}`,`Пора начать задачу «${esc(n.title)}»`]);
- if(S.streak>0)l.push(['🔥','Серия',`${S.streak} дн. подряд — так держать!`]);
- const a=achs().filter(x=>x[3]);if(a.length)l.push(['🏆','Достижение',`Получено: «${a[a.length-1][1]}»`]);
- S.tasks.filter(t=>t.date===TOM&&t.status==='planned').slice(0,2).forEach(t=>l.push(['⏰',`Завтра ${t.time}`,`Напоминание: ${esc(t.title)}`]));
- sheet(`<div class="row sp"><button class="btn sec sm" onclick="closeSheet()">←</button><b>Уведомления</b><span></span></div><div style="margin-top:14px">${l.map(x=>`<div class="card row"><span style="font-size:24px">${x[0]}</span><div><div class="mut">${x[1]}</div>${x[2]}</div></div>`).join('')||'<p class="mut">Пока нет уведомлений.</p>'}</div>`)}
+const cats=()=>[...CATS,...(S.ucats||[])];
+function addCat(){const v=$('#cn').value.trim();if(!v||cats().includes(v))return;S.ucats.push(v);save();render()}
+function delCat(i){S.ucats.splice(i,1);save();render()}
+function goalDone(i){const g=S.goals[i],k='g'+g[1];if(g[2]==='done'){g[2]='';addXp(-50,g[1],k)}else{g[2]='done';addXp(50,'Цель достигнута: '+g[1],k)}save();render()}
+const HF={daily:'Каждый день',weekdays:'По будням',weekends:'По выходным'};
+const hdue=(h,d)=>{const w=new Date(d+'T12:00').getDay();return h.f==='daily'||(h.f==='weekdays'&&w>0&&w<6)||(h.f==='weekends'&&(w===0||w===6))};
+function hstreak(h){let n=0,d=new Date(NOW);if(!h.done.includes(iso(d)))d=addD(d,-1);for(let i=0;i<400;i++){const k=iso(d);if(hdue(h,k)){if(h.done.includes(k))n++;else break}d=addD(d,-1)}return n}
+function hToggle(id){const h=S.habits.find(x=>x.id==id),i=h.done.indexOf(TODAY);if(i>=0){h.done.splice(i,1);addXp(-10,'',' h'+id+TODAY)}else{h.done.push(TODAY);addXp(10,'Привычка: '+h.t,' h'+id+TODAY)}save();render()}
+function addHabit(){const v=$('#hn').value.trim();if(!v){toast('Введите название привычки');return}S.habits.push({id:Date.now(),t:v,f:$('#hf').value||'daily',done:[]});save();render()}
+const habToday=()=>{const hs=S.habits.filter(h=>hdue(h,TODAY));return hs.length?`<div class="card"><div class="row sp"><b>Привычки сегодня</b><span class="mut">${hs.filter(h=>h.done.includes(TODAY)).length} из ${hs.length}</span></div>${hs.map(h=>`<div class="t"><button class="chk ${h.done.includes(TODAY)?'on':''}" onclick="hToggle(${h.id})">${h.done.includes(TODAY)?'✓':''}</button><div style="flex:1">${esc(h.t)}<div class="mut">🔥 ${hstreak(h)}</div></div></div>`).join('')}</div>`:''};
+function vHabits(){return `<div class="card"><input id="hn" placeholder="Новая привычка, например: читать 20 минут"><select id="hf">${Object.entries(HF).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><button class="btn" onclick="addHabit()">Добавить привычку</button></div>`+(S.habits.map(h=>{const due=hdue(h,TODAY),dn=h.done.includes(TODAY),wk=lastN(7).map(d=>`<span style="color:${h.done.includes(d)?'var(--ok)':'var(--line)'}">●</span>`).join(' ');return `<div class="card"><div class="t" style="border:0;padding:0"><button class="chk ${dn?'on':''}" ${due?'':'disabled'} onclick="hToggle(${h.id})">${dn?'✓':''}</button><div style="flex:1" onclick="habit(${h.id})"><b>${esc(h.t)}</b><div class="mut">${HF[h.f]} · 🔥 ${hstreak(h)}${due?'':' · сегодня не нужно'}</div></div></div><div style="margin-top:8px">${wk}</div></div>`}).join('')||'<p class="mut">Привычек пока нет. Добавь первую: регулярность важнее разовых усилий.</p>')}
+function habit(id){const h=S.habits.find(x=>x.id==id);sheet(`<div class="row sp"><button class="btn sec sm" onclick="closeSheet()">←</button><b>Привычка</b><span></span></div><div class="card" style="margin-top:14px"><b style="font-size:18px">${esc(h.t)}</b><p class="mut">${HF[h.f]} · серия ${hstreak(h)} · всего отметок ${h.done.length}</p></div><h2>Последние 28 дней</h2><div class="card" style="line-height:2">${lastN(28).map(d=>`<span title="${d}" style="color:${h.done.includes(d)?'var(--ok)':hdue(h,d)?'var(--line)':'transparent'}">●</span>`).join(' ')}</div><button class="btn sec" style="color:var(--bad)" onclick="if(confirm('Удалить привычку?')){S.habits=S.habits.filter(x=>x.id!=${id});save();closeSheet()}">Удалить привычку</button>`)}
+let tt='tasks';
+const segT=()=>`<div class="seg"><button class="${tt==='tasks'?'on':''}" onclick="tt='tasks';render()">Задачи</button><button class="${tt==='habits'?'on':''}" onclick="tt='habits';render()">Привычки</button></div>`;
+function vTasks(){return tt==='habits'?'<h1>Задачи</h1>'+segT()+vHabits():vTasks0().replace('<h1>Задачи</h1>','<h1>Задачи</h1>'+segT())}
+function whatNow(){const nm=new Date(),cur=pad(nm.getHours())+':'+pad(nm.getMinutes()),L=S.tasks.filter(t=>t.status!=='done'&&t.status!=='postponed'&&(t.date===TODAY||over(t)));
+ let t=L.find(x=>x.status==='progress'),why='Ты уже начал эту задачу — лучше довести её до конца.';
+ if(!t){const o=L.filter(over).sort((a,b)=>a.prio-b.prio)[0];if(o){t=o;why='Задача просрочена: сначала закрой её или перенеси.'}}
+ if(!t){const td=L.filter(x=>x.date===TODAY).sort(byTime),c=td.filter(x=>x.time<=cur).sort((a,b)=>a.prio-b.prio)[0];if(c){t=c;why='Время этой задачи уже наступило.'}else if(td[0]){t=td[0];why='Это ближайшая задача по плану.'}}
+ const h=S.habits.find(x=>hdue(x,TODAY)&&!x.done.includes(TODAY));
+ sheet(`<div class="row sp"><button class="btn sec sm" onclick="closeSheet()">←</button><b>Что сейчас лучше сделать</b><span></span></div><div class="card row" style="margin-top:14px"><div class="ai">🤖</div><div>${t?`<b>«${esc(t.title)}»</b><div class="mut">${t.time} · ${t.dur} мин</div><p style="margin-top:6px">${why}</p>`:h?`Задач на сейчас нет. Отметь привычку: <b>${esc(h.t)}</b>.`:'Всё на сегодня сделано. Отдохни или добавь новую задачу.'}</div></div>${t?`<button class="btn" onclick="startTask(${t.id});closeSheet()">Начать</button>`:''}`)}
+const NT=[['task','Напоминания о задачах'],['deadline','Приближение сроков'],['habit','Напоминания о привычках'],['ach','Достижения'],['ai','Рекомендации ИИ']];
+function notifSet(){sheet(`<div class="row sp"><button class="btn sec sm" onclick="closeSheet()">←</button><b>Уведомления</b><span></span></div><p class="mut" style="margin:12px 0">Выбери, о чём напоминать. Пока уведомления показываются внутри приложения.</p><div class="card">${NT.map(([k,l])=>`<div class="set" onclick="S.nt.${k}=!S.nt.${k};save();notifSet()"><span>${l}</span><span>${S.nt[k]?'🟢 Вкл':'⚪ Выкл'}</span></div>`).join('')}</div><button class="btn" onclick="notifs()">Показать уведомления</button>`)}
+function notifs(){const l=[],n=todayTasks().filter(t=>t.status!=='done')[0];
+ if(S.nt.task&&n)l.push(['🔔','Сегодня '+n.time,'Пора начать задачу «'+esc(n.title)+'»']);
+ if(S.nt.deadline){S.tasks.filter(over).slice(0,3).forEach(t=>l.push(['⏰','Просрочено','«'+esc(t.title)+'» — '+fmt(t.date)]));S.tasks.filter(t=>t.date===TOM&&t.status==='planned').slice(0,2).forEach(t=>l.push(['⏰','Завтра '+t.time,'Напоминание: '+esc(t.title)]))}
+ if(S.nt.habit)S.habits.filter(h=>hdue(h,TODAY)&&!h.done.includes(TODAY)).forEach(h=>l.push(['🔁','Привычка','Не забудь: '+esc(h.t)]));
+ if(S.nt.ach){if(S.streak>0)l.push(['🔥','Серия',S.streak+' дн. подряд — так держать!']);const a=achs().filter(x=>x[3]);if(a.length)l.push(['🏆','Достижение','Получено: «'+a[a.length-1][1]+'»'])}
+ if(S.nt.ai&&S.tasks.some(t=>t.date===TODAY&&t.status!=='done'))l.push(['🤖','Совет ИИ','Нажми «Что мне сейчас лучше сделать?» на экране «Сегодня».']);
+ sheet(`<div class="row sp"><button class="btn sec sm" onclick="closeSheet()">←</button><b>Уведомления</b><span></span></div><div style="margin-top:14px">${l.map(x=>`<div class="card row"><span style="font-size:24px">${x[0]}</span><div><div class="mut">${x[1]}</div>${x[2]}</div></div>`).join('')||'<p class="mut">Пока нет уведомлений.</p>'}</div><button class="btn sec" onclick="notifSet()">Настроить уведомления</button>`)}
 render();
 if(location.hash==="#new")addTask();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&iso(new Date())!==TODAY)location.reload()});
